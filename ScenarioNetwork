@@ -1,0 +1,98 @@
+import networkx as nx
+import numpy as np
+from skfuzzy import control as ctrl
+
+# Initialize the scenario network as a Directed Acyclic Graph (DAG)
+class ScenarioNetwork:
+    def __init__(self):
+        self.graph = nx.DiGraph()  # Directed Graph for project stages
+        
+    def add_stage(self, stage_id, stage_data):
+        self.graph.add_node(stage_id, data=stage_data)
+        
+    def add_transition(self, from_stage, to_stage):
+        self.graph.add_edge(from_stage, to_stage)
+
+# Define fuzzy linguistic descriptors for outcomes and external factors
+class FuzzyLinguisticDescriptor:
+    def __init__(self, name, low, medium, high):
+        self.name = name
+        # Initialize fuzzy variables for Low, Medium, High
+        self.universe = np.linspace(0, 1, 100)  
+        self.low = ctrl.Antecedent(self.universe, f'{name}_low')
+        self.medium = ctrl.Antecedent(self.universe, f'{name}_medium')
+        self.high = ctrl.Antecedent(self.universe, f'{name}_high')
+        
+        # Membership functions using trapezoidal/triangular shapes
+        self.low.automf(names=["Low"])
+        self.medium.automf(names=["Medium"])
+        self.high.automf(names=["High"])
+
+# Define a TSK fuzzy neural network structure
+class TSKFuzzyNetwork:
+    def __init__(self):
+        # Layers for inputs (trends), fuzzification, and rule aggregation
+        self.trend_req = FuzzyLinguisticDescriptor('TrendReq', low=0.0, medium=0.5, high=1.0)
+        self.trend_cap = FuzzyLinguisticDescriptor('TrendCap', low=0.0, medium=0.5, high=1.0)
+        
+    def evaluate_stage_transition(self, alpha_values, trend_req, trend_cap):
+        # Define simple fuzzy rules for demonstration:
+        rules = [
+            (ctrl.Rule(self.trend_req.low & self.trend_cap.low, 0.5)),
+            (ctrl.Rule(self.trend_req.medium & self.trend_cap.high, 0.7)),
+            (ctrl.Rule(self.trend_req.high & self.trend_cap.medium, 0.9)),
+        ]
+        # Return a weighted average decision based on rules and trends
+        result = sum(rule for rule in rules) / len(rules)
+        return result
+
+# Main simulation of adaptive stage transitions
+class CybersecurityProjectSimulation:
+    def __init__(self):
+        self.network = ScenarioNetwork()
+        self.fuzzy_net = TSKFuzzyNetwork()
+
+    def add_stage(self, stage_id, outcome_data):
+        self.network.add_stage(stage_id, outcome_data)
+    
+    def add_transition(self, from_stage, to_stage):
+        self.network.add_transition(from_stage, to_stage)
+    
+    def simulate(self, initial_stage):
+        current_stage = initial_stage
+        # Example for trajectory from source to sink in a directed acyclic graph
+        trajectory = [current_stage]
+        
+        while True:
+            next_stage = None
+            # Evaluate transition based on fuzzy rules
+            for successor in self.network.graph.successors(current_stage):
+                outcome_data = self.network.graph.nodes[current_stage]['data']
+                decision_value = self.fuzzy_net.evaluate_stage_transition(
+                    alpha_values=outcome_data['alpha'], 
+                    trend_req=outcome_data['trend_req'], 
+                    trend_cap=outcome_data['trend_cap']
+                )
+                
+                if decision_value > 0.6:  # threshold for transition
+                    next_stage = successor
+                    break
+            
+            if next_stage is None:
+                print("End of project simulation reached.")
+                break
+                
+            trajectory.append(next_stage)
+            current_stage = next_stage
+            
+        print("Project trajectory:", trajectory)
+
+# Example usage
+if __name__ == "__main__":
+    project = CybersecurityProjectSimulation()
+    project.add_stage(1, {"alpha": [0.3, 0.5], "trend_req": 0.5, "trend_cap": 0.6})
+    project.add_stage(2, {"alpha": [0.4, 0.6], "trend_req": 0.7, "trend_cap": 0.5})
+    project.add_transition(1, 2)
+    
+    # Start the simulation
+    project.simulate(initial_stage=1)
