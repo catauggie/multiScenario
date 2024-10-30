@@ -1,0 +1,82 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+
+# Define Gaussian membership functions for Low, Medium, and High
+def generalized_gaussian(x, beta, sigma, gamma):
+    """Generalized Gaussian membership function."""
+    return 1 / (1 + ((x - beta) / sigma) ** (2 * gamma))
+
+# Parameters for membership functions (example values)
+params = {
+    'Low': (0.2, 0.1, 2),     # (beta, sigma, gamma) for "Low"
+    'Medium': (0.5, 0.1, 2),  # for "Medium"
+    'High': (0.8, 0.1, 2)     # for "High"
+}
+
+# Generate values for plotting
+x = np.linspace(0, 1, 100)
+
+# Calculate membership values for each term
+low_mf = generalized_gaussian(x, *params['Low'])
+medium_mf = generalized_gaussian(x, *params['Medium'])
+high_mf = generalized_gaussian(x, *params['High'])
+
+# Plot the membership functions
+plt.figure(figsize=(10, 6))
+plt.plot(x, low_mf, label='Low', color='blue')
+plt.plot(x, medium_mf, label='Medium', color='green')
+plt.plot(x, high_mf, label='High', color='red')
+plt.title('Generalized Gaussian Membership Functions')
+plt.xlabel('Numerical Value')
+plt.ylabel('Membership Degree')
+plt.legend()
+plt.grid()
+plt.show()
+
+# Fuzzy rules based on trends
+trend_req = ctrl.Antecedent(np.arange(0, 1.1, 0.1), 'TrendReq')
+trend_cap = ctrl.Antecedent(np.arange(0, 1.1, 0.1), 'TrendCap')
+alpha = ctrl.Consequent(np.arange(0, 1.1, 0.1), 'Alpha')
+
+# Membership functions for TrendReq and TrendCap
+trend_req['Low'] = fuzz.trimf(trend_req.universe, [0, 0, 0.5])
+trend_req['Medium'] = fuzz.trimf(trend_req.universe, [0, 0.5, 1])
+trend_req['High'] = fuzz.trimf(trend_req.universe, [0.5, 1, 1])
+
+trend_cap['Low'] = fuzz.trimf(trend_cap.universe, [0, 0, 0.5])
+trend_cap['Medium'] = fuzz.trimf(trend_cap.universe, [0, 0.5, 1])
+trend_cap['High'] = fuzz.trimf(trend_cap.universe, [0.5, 1, 1])
+
+# Membership functions for Alpha (example setup)
+alpha['Low'] = fuzz.trimf(alpha.universe, [0, 0, 0.5])
+alpha['Medium'] = fuzz.trimf(alpha.universe, [0, 0.5, 1])
+alpha['High'] = fuzz.trimf(alpha.universe, [0.5, 1, 1])
+
+# Fuzzy rules
+rule1 = ctrl.Rule(trend_req['Low'] & trend_cap['Low'], alpha['Low'])
+rule2 = ctrl.Rule(trend_req['Low'] & trend_cap['Medium'], alpha['Low'])
+rule3 = ctrl.Rule(trend_req['Low'] & trend_cap['High'], alpha['Medium'])
+rule4 = ctrl.Rule(trend_req['Medium'] & trend_cap['Low'], alpha['Low'])
+rule5 = ctrl.Rule(trend_req['Medium'] & trend_cap['Medium'], alpha['Medium'])
+rule6 = ctrl.Rule(trend_req['Medium'] & trend_cap['High'], alpha['High'])
+rule7 = ctrl.Rule(trend_req['High'] & trend_cap['Low'], alpha['Medium'])
+rule8 = ctrl.Rule(trend_req['High'] & trend_cap['Medium'], alpha['High'])
+rule9 = ctrl.Rule(trend_req['High'] & trend_cap['High'], alpha['High'])
+
+# Control system
+alpha_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9])
+alpha_simulation = ctrl.ControlSystemSimulation(alpha_ctrl)
+
+# Input values for simulation
+alpha_simulation.input['TrendReq'] = 0.4  # Example input for TrendReq
+alpha_simulation.input['TrendCap'] = 0.6  # Example input for TrendCap
+
+# Compute the output
+alpha_simulation.compute()
+
+# Output result
+print(f"Calculated Alpha value: {alpha_simulation.output['Alpha']:.2f}")
+alpha.view(sim=alpha_simulation)
+
