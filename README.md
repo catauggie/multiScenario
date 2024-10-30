@@ -1,3 +1,29 @@
+# Project Code Explanation
+
+## Classes and Structure
+
+1. **`ScenarioNetwork`**: This class builds the Directed Acyclic Graph (DAG) representing the project stages, with each node as a project stage and each directed edge as a possible transition between stages.
+
+2. **`FuzzyLinguisticDescriptor`**: This class establishes linguistic variables with basic membership functions (Low, Medium, High). These functions represent fuzzy categories, enabling qualitative assessments of project indicators and external factors.
+
+3. **`TSKFuzzyNetwork`**: This class defines a simplified Takagi-Sugeno-Kang (TSK) fuzzy neural network. It uses fuzzy logic to combine inputs and derive outputs based on fuzzy production rules, which guide the project’s stage transition decisions.
+
+4. **`CybersecurityProjectSimulation`**: This class manages the project’s lifecycle through its stages, utilizing the fuzzy rules and the TSK network to adaptively transition between stages, in response to external factors and project outcomes.
+
+## Fuzzy Rules and Evaluation
+
+- **Fuzzy Logic Rules**: Fuzzy rules are set to evaluate the current state based on `TrendReq` (required level of cybersecurity) and `TrendCap` (current capacity to meet cybersecurity needs). These fuzzy rules determine the likelihood of transitioning to each possible next stage.
+  
+- **Weighted Decision Making**: The TSK fuzzy network calculates weighted outcomes from multiple fuzzy rules to choose the next stage. Higher weights reflect a stronger alignment with the current project conditions, allowing the network to adaptively choose paths based on rule confidence.
+
+## Running the Simulation
+
+- **Simulation Flow**: The simulation starts at the initial stage (the source node in the DAG). It evaluates the current state and conditions using fuzzy logic, then selects the next stage based on the weighted fuzzy rules. The process repeats until the simulation reaches the final stage (sink node) or no further transitions are available.
+
+- **Program Extension**: This program is designed to be expanded with real fuzzy parameters and more complex rule structures. Additional machine learning elements could further refine rule adaptations based on dynamic project and external factor data, providing a more robust simulation for real-world cybersecurity projects.
+
+
+
 # External Factors Dataset for Cybersecurity Management Project
 
 | Feature                    | Description                                                                                           | Range              | Source                                                                                      |
